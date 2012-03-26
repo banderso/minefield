@@ -2,7 +2,14 @@
 CC=clang
 CFLAGS=-Wall -g -c
 LDFLAGS=-lncurses
-SOURCES=src/mftimer.c src/mfplayer.c src/mfenemies.c src/mfworld.c src/mfgame.c src/minefield.c
+SOURCES=src/mftimer.c \
+	src/mffilesystem.c \
+	src/mflog.c \
+	src/mfplayer.c \
+	src/mfenemies.c \
+	src/mfworld.c \
+	src/mfgame.c \
+	src/minefield.c
 OBJECTS=$(SOURCES:.c=.o)
 EXE=minefield
 

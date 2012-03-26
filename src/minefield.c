@@ -6,6 +6,8 @@
 #include <ncurses.h>
 
 #include "mftimer.h"
+#include "mffilesystem.h"
+#include "mflog.h"
 #include "mfplayer.h"
 #include "mfenemies.h"
 #include "mfworld.h"
@@ -48,16 +50,24 @@ void shutdown_ncurses() {
 
 s32 main(void) {
 
+  mffilesystem_setup();
+  mflog_setup();
+  
   s32 max_x, max_y;
   init_ncurses(&max_x, &max_y);
   mfgame *game = init_game(max_x, max_y);
 
+  mflog("Starting game");
   mfgame_run(game);
   timeout(-1);
   getch();
   getch();
+  mflog("Game ended");
 
   shutdown_ncurses();
   mfgame_delete(game);
+
+  mflog_shutdown();
+  mffilesystem_shutdown();
   return 0;
 }
