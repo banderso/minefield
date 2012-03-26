@@ -26,7 +26,7 @@
 #define MIN_PER_HOUR 60
 
 #define NS_PER_FRAME (NS_PER_SEC / 60)
-#define MS_PER_FRAME (ms_PER_SEC / 60);
+#define MS_PER_FRAME (MS_PER_SEC / 60);
 
 typedef enum {UP, DOWN, LEFT, RIGHT} mfgravity;
 

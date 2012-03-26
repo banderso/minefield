@@ -8,16 +8,20 @@
 
 #define ENEMY_COUNT 50
 typedef struct {
-  const u32 count;
   s64 next_update;
+  u64 alive;
+  const u32 count;
   u32 alive_cnt;
   u8 size[ENEMY_COUNT];
   s32 xpos[ENEMY_COUNT];
   s32 ypos[ENEMY_COUNT];
   u32 speed[ENEMY_COUNT];
   s32 update[ENEMY_COUNT];
-  bool alive[ENEMY_COUNT];
 } mfenemies;
+
+#define alive_chk(alive, num) (((alive) << (63 - (num))) >> 63)
+#define alive_set(alive, num) ((alive) ^ (1ul << (num)))
+#define alive_cond_flip(alive, cond, num) ((alive) ^ ((u64)(cond) << (num)))
 
 extern mfenemies *mfenemies_create(void);
 extern void mfenemies_delete(mfenemies *enemies);

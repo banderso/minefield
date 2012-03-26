@@ -55,9 +55,9 @@ void mfgame_print(mfgame *game) {
   printf("Enemies:\n");
   s32 *xpos = enemies->xpos;
   s32 *ypos = enemies->ypos;
-  bool *alive = enemies->alive;
+  u64 alive = enemies->alive;
   for (int i = 0; i < enemies->count; i++) {
-    printf("%2d - Position: (%d, %d), Alive: %s\n", i, xpos[i], ypos[i], ((alive[i]) ? "yes" : "no"));
+    printf("%2d - Position: (%d, %d), Alive: %s\n", i, xpos[i], ypos[i], (alive_chk(alive, i) ? "yes" : "no"));
   }
 }
 
@@ -80,7 +80,7 @@ mfgame *mfgame_update(mfgame *game, u64 dt) {
 
   game->score += mfenemies_update_position(enemies, game->mx, game->my, world->gravity, dt);
   mfenemies_activate(enemies, game->mx, game->my, world->gravity);
-  bool hit = false;//mfenemies_check_position(enemies, mfp_x(player), mfp_y(player));
+  bool hit = mfenemies_check_position(enemies, mfp_x(player), mfp_y(player));
 
   if (game->running)
     game->running = !hit;
@@ -100,16 +100,16 @@ mfgame * mfgame_render(mfgame *game, u64 elapsed_time, u64 processed_time) {
     attroff(A_BOLD);
   }
 
-  bool *alive = enemies->alive;
+  u64 alive = enemies->alive;
   u8 *size = enemies->size;
   s32 *xpos = enemies->xpos;
   s32 *ypos = enemies->ypos;
   s32 x = 0, y = 0, xx = 0, yy = 0;
   s8 enemy_grafx = 'M';
-  for (int i = 0, len = enemies->count; i < len; i++) {
-    if (alive[i]) {
-      x = xpos[i];
-      y = ypos[i];
+  for (u32 i = 0, len = enemies->count; i < len; i++) {
+    if (alive_chk(alive, i)) {
+      x = (xpos[i] / 1000);
+      y = (ypos[i] / 1000);
       mvaddch(y, x, enemy_grafx);
       if (size[i] == 2) {
         xx = x + 1;
@@ -129,6 +129,10 @@ mfgame * mfgame_render(mfgame *game, u64 elapsed_time, u64 processed_time) {
   mvprintw(row++, 0, "ProcessedTime (ns): %010lu", processed_time);
   //*/
 
+  mvprintw(row++, 0, "Alive: %016lx", alive);
+  //mvprintw(row++, 0, "x: %d y: %d", game->mx, game->my);
+  //mvprintw(row++, 0, "x: %d y: %d", x, y);
+  //mvprintw(row++, 0, "speed: %d", enemies->speed[0] * (elapsed_time / NS_PER_MS));
   mfclock *clock = &(game->clock);
   mvprintw(row++, 0, "Time:     %02d:%02d:%02d.%03d", clock->hour, clock->min, clock->sec, clock->msec);
   mvprintw(row++, 0, "Gravity Update: %2d", (world->update / MS_PER_SEC));

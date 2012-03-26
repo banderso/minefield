@@ -1,4 +1,5 @@
 
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -6,7 +7,7 @@
 #include "mfenemies.h"
 
 mfenemies *mfenemies_create(void) {
-  mfenemies init = { ENEMY_COUNT, 0, 0, {0}, {0}, {0}, {0}, {0} };
+  mfenemies init = { 0, 0, ENEMY_COUNT, 0, {0}, {0}, {0}, {0}, {0} };
   mfenemies *enemies = NULL;
   enemies = malloc(sizeof(mfenemies));
   if (enemies == NULL) {
@@ -33,49 +34,58 @@ void mfenemies_init(mfenemies *enemies, s32 mx, s32 my) {
 */
 
 u32 mfenemies_update_position(mfenemies *enemies, u32 mx, u32 my, mfgravity gravity, u64 dt) {
-  bool *alive = enemies->alive;
+  u64 alive = enemies->alive;
   s32 *xpos = enemies->xpos;
   s32 *ypos = enemies->ypos;
-  u8 *size = enemies->size;
   u32 *speed = enemies->speed;
-  s32 *update = enemies->update;
-  u32 alive_cnt = enemies->alive_cnt;
- 
-  bool dead = false;
-  u32 total_death = 0;
-  for (s32 i = 0, len = enemies->count; i < len; i++) {
-    if (alive[i]) {
-      if (update[i] < 0) {
-        update[i] = NS_PER_FRAME * speed[i];
-        switch (gravity) {
-          case UP:
-            ypos[i] -= 2;
-            dead = (ypos[i] < 0);
-            break;
-          case DOWN:
-            ypos[i] += 2;
-            dead = (ypos[i] > my);
-            break;
-          case LEFT:
-            xpos[i] -= 2;
-            dead = (xpos[i] < 0);
-            break;
-          case RIGHT:
-            xpos[i] += 2;
-            dead = (xpos[i] > mx);
-            break;
-        }
-        if (dead) {
-          dead = false;
-          alive[i] = false;
-          alive_cnt--;
-          total_death += size[i];
-        }
-      } else {
-        update[i] -= dt;
+
+  u32 d = 0, dt_ms = dt / NS_PER_MS;
+  //  bool dead[ENEMY_COUNT] = {false};
+
+  s32 len = enemies->count;
+  for (s32 i = 0; i < len; i++) {
+    if (alive_chk(alive, i)) {
+      d = speed[i] * dt_ms;
+      switch (gravity) {
+        case UP:
+          ypos[i] -= d;
+          alive = alive_cond_flip(alive, ((ypos[i] / 1000) <= 0), i);
+          //dead[i] = ((ypos[i] / 1000) <= 0);
+          break;
+        case DOWN:
+          ypos[i] += d;
+          alive = alive_cond_flip(alive, ((ypos[i] / 1000) > my), i);
+          //dead[i] = ((ypos[i] / 1000) > my);
+          break;
+        case LEFT:
+          xpos[i] -= d;
+          alive = alive_cond_flip(alive, ((xpos[i] / 1000) <= 0), i);
+          //dead[i] = ((xpos[i] / 1000) <= 0);
+          break;
+        case RIGHT:
+          xpos[i] += d;
+          alive = alive_cond_flip(alive, ((xpos[i] / 1000) > mx), i);
+          //dead[i] = ((xpos[i] / 1000) > mx);
+          break;
       }
     }
   }
+
+  u32 alive_cnt = enemies->alive_cnt,
+      total_death = 0;
+  u8 *size = enemies->size;
+  for (s32 i = 0, len = ENEMY_COUNT; i < len; i++) {
+    /*if (dead[i]) {
+      alive = alive_set(alive, i);
+      alive_cnt--;
+      total_death += size[i];
+    }
+    */
+    alive_cnt -= alive_chk(alive, i);
+    total_death = total_death + (size[i] * !alive_chk(alive, i));
+  }
+
+  enemies->alive = alive;
   enemies->alive_cnt = alive_cnt;
   return total_death;
 }
@@ -84,12 +94,12 @@ bool mfenemies_check_position(mfenemies *enemies, u32 x, u32 y) {
   u8 *size = enemies->size;
   s32 *xpos = enemies->xpos;
   s32 *ypos = enemies->ypos;
-  bool *alive = enemies->alive;
+  u64 alive = enemies->alive;
   bool hit = false;
   s32 ex = 0, ey = 0, exx = 0, eyy = 0;;
   u8 s = 0;
   for (u32 i = 0, len = enemies->count; i < len; i++) {
-    if (alive[i]) {
+    if (alive_chk(alive, i)) {
       ex = xpos[i];
       ey = ypos[i];
       s = size[i];
@@ -113,49 +123,51 @@ void mfenemies_activate(mfenemies *enemies, u32 mx, u32 my, mfgravity gravity) {
   s32 *xpos = enemies->xpos;
   s32 *ypos = enemies->ypos;
   u32 *speed = enemies->speed;
-  bool *alive = enemies->alive;
+  u64 alive = enemies->alive;
   u32 alive_cnt = enemies->alive_cnt;
   for (u32 i = 0, len = enemies->count; i < len; i++) {
-    if (active_num != 0 && !alive[i]) {
+    if (active_num != 0 && !(alive_chk(alive, i))) {
       active_num--;
       alive_cnt++;
-      alive[i] = true;
+      alive = alive_set(alive, i);
       size[i] = (rand() % 2 + 1);
-      speed[i] = ((rand() % (15 - 2) + 1) + 2);
+      speed[i] = ((rand() % (20 - 2) + 1) + 2);
       switch (gravity) {
         case UP:
-          xpos[i] = (rand() % mx + 1);
-          ypos[i] = my;
+          xpos[i] = (rand() % mx + 1) * 1000;
+          ypos[i] = my * 1000;
           break;
         case DOWN:
-          xpos[i] = (rand() % mx + 1);
+          xpos[i] = (rand() % mx + 1) * 1000;
           ypos[i] = 0;
           break;
         case LEFT:
-          xpos[i] = mx;
-          ypos[i] = (rand() % my + 1);
+          xpos[i] = mx * 1000;
+          ypos[i] = (rand() % my + 1) * 1000;
           break;
         case RIGHT:
           xpos[i] = 0;
-          ypos[i] = (rand() % my + 1);
+          ypos[i] = (rand() % my + 1) * 1000;
           break;
       }
     }
   }
+  enemies->alive = alive;
   enemies->alive_cnt = alive_cnt;
 }
 
 void mfenemies_activate_enemy(mfenemies *enemies, u32 x, u32 y) {
-  bool *alive = enemies->alive;
+  u64 alive = enemies->alive;
   s32 enemy = -1;
   for (s32 i = 0, len = enemies->count; i < len; i++) {
-    if (!alive[i]) {
+    if (!(alive_chk(alive, i))) {
       enemy = i;
+      alive = alive_set(alive, i);
       break;
     }
   }
   if (enemy < 0) return;
-  alive[enemy] = true;
+  enemies->alive = alive;
   enemies->update[enemy] = 0;
   enemies->xpos[enemy] = x;
   enemies->ypos[enemy] = y;
@@ -167,7 +179,7 @@ s8 *mfenemies_enemy_to_string(const mfenemies *enemies, u32 num) {
 
   const u32 x = enemies->xpos[num];
   const u32 y = enemies->ypos[num];
-  const bool a = enemies->alive[num];
+  const u32 a = alive_chk(enemies->alive, num);
   const s8 format[] = "{%d, %d, %d}";
   s32 size = snprintf(NULL, 0, format, x, y, a) + 1;
   s8 *str = malloc(sizeof(s8) * (size));

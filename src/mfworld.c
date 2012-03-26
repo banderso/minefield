@@ -6,7 +6,7 @@
 #include "mfworld.h"
 
 mfworld *mfworld_create(mfplayer *player, mfenemies *enemies) {
-  mfworld init = {player, enemies, DOWN, (MS_PER_SEC * 30)};
+  mfworld init = {player, enemies, DOWN, (MS_PER_SEC * 15)};
   mfworld *world = NULL;
   world = malloc(sizeof(mfworld));
   if (world == NULL) {
