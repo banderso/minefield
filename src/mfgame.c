@@ -8,6 +8,7 @@
 #include "mfplayer.h"
 #include "mfenemies.h"
 #include "mftimer.h"
+#include "mflog.h"
 
 mfgame *mfgame_create(mfworld *world) {
   mfgame init = {0, 0, 0, false, {0, 0, 0, 0}, world};
@@ -81,7 +82,7 @@ mfgame *mfgame_update(mfgame *game, u64 dt) {
   game->score += mfenemies_update_position(enemies, game->mx, game->my, world->gravity, dt);
   mfenemies_activate(enemies, game->mx, game->my, world->gravity);
   bool hit = mfenemies_check_position(enemies, mfp_x(player), mfp_y(player));
-
+  //mflog("Checked position (%u, %u) with result %s", mfp_x(player), mfp_y(player), (hit ? "yes" : "no"));
   if (game->running)
     game->running = !hit;
 
@@ -105,18 +106,20 @@ mfgame * mfgame_render(mfgame *game, u64 elapsed_time, u64 processed_time) {
   s32 *xpos = enemies->xpos;
   s32 *ypos = enemies->ypos;
   s32 x = 0, y = 0, xx = 0, yy = 0;
-  s8 enemy_grafx = 'M';
+  //u32 enemy_grafx = ACS_DIAMOND;
   for (u32 i = 0, len = enemies->count; i < len; i++) {
     if (alive_chk(alive, i)) {
       x = (xpos[i] / 1000);
       y = (ypos[i] / 1000);
-      mvaddch(y, x, enemy_grafx);
-      if (size[i] == 2) {
+      if (size[i] == 1) {
+        mvaddch(y, x, ACS_DIAMOND);
+      } else {
         xx = x + 1;
         yy = y + 1;
-        mvaddch(y, xx, enemy_grafx);
-        mvaddch(yy, x, enemy_grafx);
-        mvaddch(yy, xx, enemy_grafx);
+        mvaddch(y, x, ACS_ULCORNER);
+        mvaddch(y, xx, ACS_URCORNER);
+        mvaddch(yy, x, ACS_LLCORNER);
+        mvaddch(yy, xx, ACS_LRCORNER);
       }
     }
   }

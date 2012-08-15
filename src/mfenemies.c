@@ -5,6 +5,7 @@
 #include <stdio.h>
 
 #include "mfenemies.h"
+#include "mflog.h"
 
 mfenemies *mfenemies_create(void) {
   mfenemies init = { 0, 0, ENEMY_COUNT, 0, {0}, {0}, {0}, {0}, {0} };
@@ -100,8 +101,8 @@ bool mfenemies_check_position(mfenemies *enemies, u32 x, u32 y) {
   u8 s = 0;
   for (u32 i = 0, len = enemies->count; i < len; i++) {
     if (alive_chk(alive, i)) {
-      ex = xpos[i];
-      ey = ypos[i];
+      ex = (xpos[i] / 1000);
+      ey = (ypos[i] / 1000);
       s = size[i];
       if (s == 1) {
         if ((hit = (ex == x && ey == y))) break;
